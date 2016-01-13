@@ -34,7 +34,9 @@ def make_chains(text_string):
     """
 
     chains = {}
-    words = text_string.rstrip().replace("\n"," ").split(" ")
+    words = text_string.rstrip().replace("\n", " ").split(" ")
+    words = [word for word in words if word]
+    # can also use: words = filter(None,words)
     
     indicies = range(len(words)-n_grams)
 
@@ -54,47 +56,45 @@ def make_text(chains):
     """Takes dictionary of markov chains; returns random text."""
 
     text = ""
-    capitalized_keys = []
 
-    for t in chains:
-        if t[0][0][0].isupper():
-            capitalized_keys.append(t)
+    capitalized_keys = [t for t in chains if t[0][0].isupper()]
 
-    print capitalized_keys
-    chosen_word = choice(capitalized_keys)
-    
-    for word in chosen_word:
+    random_key = choice(capitalized_keys)
+    for word in random_key:
         text += word + " "
     
-# break this function into two for readability
-
     writing = True
-
     while writing:
-        next_word = choice(chains[chosen_word])
+        next_word = choice(chains[random_key])
 
         text += next_word + " "
-        next_key = []
 
-        for word in chosen_word:
-            next_key.append(word)
-
-        next_key.append(next_word)
-        chosen_word = tuple(next_key[1:])
-
-        if chosen_word not in chains:
+        if any(p in next_word for p in ('.','!','?','--')) or len(text) == 140:
             writing = False
 
+        next_key = [word for word in random_key[1:]]
+        next_key.append(next_word)
 
+        random_key = tuple(next_key)
+
+        if random_key not in chains:
+            writing = False
 
     return text
-    # slice text at punctuation
 
-input_path = sys.argv[1]
+def combine_files(list):
+    combined_data = ''
+    for item in list:
+        combined_data += open_and_read_file(item) + " "
+
+    return combined_data
+
+
+input_path = sys.argv[1:]
 
 # Open the file and turn it into one long string
-input_text = open_and_read_file(input_path)
-
+# input_text = open_and_read_file(input_path)
+input_text = combine_files(input_path)
 # Get a Markov chain
 chains = make_chains(input_text)
 
