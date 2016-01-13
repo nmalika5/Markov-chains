@@ -1,5 +1,6 @@
 from random import choice
 import sys
+from string import *
 
 def open_and_read_file(file_path):
     """Takes file path as string; returns text as string.
@@ -14,6 +15,10 @@ def open_and_read_file(file_path):
 
 
     return file_data
+
+
+n_grams = int(raw_input("Enter the number of n_grams you want? "))
+    
 
 def make_chains(text_string):
     """Takes input text as string; returns _dictionary_ of markov chains.
@@ -30,12 +35,13 @@ def make_chains(text_string):
 
     chains = {}
     words = text_string.rstrip().replace("\n"," ").split(" ")
-    indicies = range(len(words)-2)
+    
+    indicies = range(len(words)-n_grams)
 
-    for i in indicies:
+    for i in indicies:    
+        key = tuple([words[i] for i in range(i,n_grams+i)])
+        next_word = words[i+1]
 
-        key = (words[i], words[i+1])
-        next_word = words[i+2]
         if key not in chains:
             chains[key] = []
         chains[key].append(next_word)
@@ -48,22 +54,41 @@ def make_text(chains):
     """Takes dictionary of markov chains; returns random text."""
 
     text = ""
-    chosen_word = choice(chains.keys())
+    capitalized_keys = []
+
+    for t in chains:
+        if t[0][0][0].isupper():
+            capitalized_keys.append(t)
+
+    print capitalized_keys
+    chosen_word = choice(capitalized_keys)
     
+    for word in chosen_word:
+        text += word + " "
+    
+# break this function into two for readability
+
     writing = True
 
     while writing:
         next_word = choice(chains[chosen_word])
 
-        text += "{} {} {} ".format(chosen_word[0],chosen_word[1],next_word)
-        chosen_word = (chosen_word[1], next_word)
+        text += next_word + " "
+        next_key = []
+
+        for word in chosen_word:
+            next_key.append(word)
+
+        next_key.append(next_word)
+        chosen_word = tuple(next_key[1:])
 
         if chosen_word not in chains:
             writing = False
 
 
-    return text
 
+    return text
+    # slice text at punctuation
 
 input_path = sys.argv[1]
 
