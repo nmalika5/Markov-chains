@@ -1,6 +1,25 @@
 from random import choice
 import sys
 
+import os
+import twitter
+
+api = twitter.Api(
+    consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
+    consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],
+    access_token_key=os.environ['TWITTER_ACCESS_TOKEN_KEY'],
+    access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET']
+    )
+
+def tweet_markov(chains):
+
+    print api.VerifyCredentials()
+
+    status = api.PostUpdate(make_text(chains))
+    print status.text
+
+def tweet_normally(post):
+     api.PostUpdate(post[:140])
 
 def open_and_read_file(file_path):
     """Takes file path as string; returns text as string.
@@ -15,9 +34,6 @@ def open_and_read_file(file_path):
 
 
     return file_data
-
-
-n_grams = int(raw_input("Enter the number of n_grams you want? "))
     
 
 def make_chains(text_string):
@@ -67,9 +83,12 @@ def make_text(chains):
     while writing:
         next_word = choice(chains[random_key])
 
+        if text + next_word > 140:
+            writing = False
+
         text += next_word + " "
 
-        if any(p in next_word for p in ('.','!','?','--')) or len(text) == 140:
+        if any(p in next_word for p in ('.','!','?','--')):
             writing = False
 
         next_key = [word for word in random_key[1:]]
@@ -89,16 +108,37 @@ def combine_files(list):
 
     return combined_data
 
+def print_last_tweet(user):
+    print (api.GetUserTimeline(user)[0]).text
 
-input_path = sys.argv[1:]
+
+twitter_app_running = True
+
+while twitter_app_running:
+    user_choice = raw_input("What would you like to do? Enter \'t\' to tweet normally, \
+\'m\' to tweet a markov text, \'g\' to print last tweet, or \'q\' to quit.\n").lower()
+    if user_choice == 'm':
+        n_grams = int(raw_input("Enter the number of n_grams you want? "))
+        input_file = raw_input("Enter the files you'd like to combine, separated by spaces: ").split(" ")
+        input_text = combine_files(input_file)
+        chains = make_chains(input_text)
+        tweet_markov(chains)
+    elif user_choice == 't':
+        post = raw_input("Type your tweet: ")
+        tweet_normally(post)
+    elif user_choice == 'g':
+        user = raw_input("Enter the username to retreive its last tweet: ")
+        print_last_tweet(user)
+    elif user_choice == 'q':
+        twitter_app_running = False
+    else:
+        print "Invalid input! Please try again."
+
+
 
 # Open the file and turn it into one long string
-# input_text = open_and_read_file(input_path)
-input_text = combine_files(input_path)
+
 # Get a Markov chain
-chains = make_chains(input_text)
 
 # Produce random text
-random_text = make_text(chains)
-
-print random_text
+# random_text = make_text(chains)
